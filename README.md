@@ -5,6 +5,8 @@ PhishDeezNuts is a sophisticated email security application that uses machine le
 ## Features
 
 - 🤖 **Multi-layered Detection System**
+
+- 
   - Machine Learning (Random Forest) analysis
   - Rule-based pattern detection
   - Google Gemini AI analysis for complex cases
