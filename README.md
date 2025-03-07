@@ -5,16 +5,22 @@ PhishDeezNuts is a sophisticated email security application that uses machine le
 ## Working Demo
 <p align="center">
   <img src="LoginPage.png">
+</p>
+
+<p>
   <img src="DashboardPage.png">
 </p>
 
 <p align="center">
-  <img src="EmailPage.png>
+  <img src="EmailPage.png">
+</p>
+
+<p>
   <img src="EmailAIAnalyzerPage.png">
 </p>
 
 <p align="center">
-  <img src="SettingsPage.png"">
+  <img src="SettingsPage.png">
 </p>
 
 
