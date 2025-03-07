@@ -188,6 +188,6 @@ npm test
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Star History
 
+## Star Nuts
 [![Star History Chart](https://api.star-history.com/svg?repos=SusyBegula/PhishDeezNuts&type=Date)](https://star-history.com/#SusyBegula/PhishDeezNuts&Date)
