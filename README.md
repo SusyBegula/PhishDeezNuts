@@ -39,7 +39,7 @@ PhishDeezNuts is a sophisticated email security application that uses machine le
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/PhishDeezNuts.git
+git clone https://github.com/susybegula/PhishDeezNuts.git
 cd PhishDeezNuts
 ```
 
