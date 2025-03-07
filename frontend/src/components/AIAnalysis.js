@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { analyzeEmailWithAI } from '../services/emailService';
-import { Box, Button, Typography, Paper, CircularProgress, Alert, AlertTitle, Divider } from '@mui/material';
+import { Box, Button, Typography, Paper, CircularProgress, Alert, AlertTitle, Divider, useTheme } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -9,6 +9,8 @@ const AIAnalysis = ({ emailId }) => {
   const [analysis, setAnalysis] = useState('');
   const [error, setError] = useState(null);
   const [statusMessages, setStatusMessages] = useState([]);
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -79,8 +81,8 @@ const AIAnalysis = ({ emailId }) => {
             p: 3, 
             maxHeight: 500, 
             overflow: 'auto',
-            backgroundColor: '#fafafa',
-            border: '1px solid #e0e0e0',
+            backgroundColor: isDarkMode ? '#272727' : '#fafafa',
+            border: `1px solid ${isDarkMode ? '#444' : '#e0e0e0'}`,
             borderRadius: 2
           }}
         >
@@ -89,14 +91,14 @@ const AIAnalysis = ({ emailId }) => {
             alignItems: 'center', 
             mb: 2,
             pb: 1,
-            borderBottom: '1px solid #e0e0e0'
+            borderBottom: `1px solid ${isDarkMode ? '#444' : '#e0e0e0'}`
           }}>
             <Typography 
               variant="h6" 
               component="div" 
               sx={{ 
                 fontWeight: 'bold',
-                color: '#1976d2'
+                color: isDarkMode ? theme.palette.primary.light : theme.palette.primary.main
               }}
             >
               AI Analysis
@@ -108,7 +110,7 @@ const AIAnalysis = ({ emailId }) => {
               fontWeight: 'bold',
               mt: 2,
               mb: 1,
-              color: '#333'
+              color: isDarkMode ? '#fff' : '#333'
             },
             '& h1': { fontSize: '1.8rem' },
             '& h2': { fontSize: '1.5rem' },
@@ -127,7 +129,7 @@ const AIAnalysis = ({ emailId }) => {
             },
             '& strong': {
               fontWeight: 'bold',
-              color: '#1976d2'
+              color: isDarkMode ? theme.palette.primary.light : theme.palette.primary.main
             },
             '& em': {
               fontStyle: 'italic'
@@ -138,36 +140,36 @@ const AIAnalysis = ({ emailId }) => {
               mb: 2
             },
             '& th, & td': {
-              border: '1px solid #ddd',
+              border: `1px solid ${isDarkMode ? '#444' : '#ddd'}`,
               p: 1
             },
             '& th': {
-              backgroundColor: '#f5f5f5',
+              backgroundColor: isDarkMode ? '#333' : '#f5f5f5',
               fontWeight: 'bold'
             },
             '& blockquote': {
-              borderLeft: '4px solid #1976d2',
+              borderLeft: `4px solid ${isDarkMode ? theme.palette.primary.light : theme.palette.primary.main}`,
               pl: 2,
               fontStyle: 'italic',
               my: 1,
               py: 0.5,
-              backgroundColor: 'rgba(25, 118, 210, 0.05)'
+              backgroundColor: isDarkMode ? 'rgba(25, 118, 210, 0.1)' : 'rgba(25, 118, 210, 0.05)'
             },
             '& code': {
               fontFamily: 'monospace',
-              backgroundColor: '#f5f5f5',
+              backgroundColor: isDarkMode ? '#333' : '#f5f5f5',
               p: 0.5,
               borderRadius: 1
             },
             '& pre': {
-              backgroundColor: '#f5f5f5',
+              backgroundColor: isDarkMode ? '#333' : '#f5f5f5',
               p: 1.5,
               borderRadius: 1,
               overflow: 'auto',
               mb: 1.5
             },
             '& a': {
-              color: '#1976d2',
+              color: isDarkMode ? theme.palette.primary.light : theme.palette.primary.main,
               textDecoration: 'none',
               '&:hover': {
                 textDecoration: 'underline'

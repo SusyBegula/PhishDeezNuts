@@ -161,6 +161,7 @@ def analyze_email_with_ai(email_id):
             
             # List of models to try in order of preference
             models_to_try = [
+                'gemini-2.0-flash',
                 'gemini-1.5-flash',
                 'gemini-1.0-pro',
                 'gemini-pro',
@@ -174,7 +175,45 @@ def analyze_email_with_ai(email_id):
             for model_name in models_to_try:
                 try:
                     yield f"data: {json.dumps({'text': f'Trying model: {model_name}...'})}\n\n"
-                    model = genai.GenerativeModel(model_name)
+                    
+                    # Try with full configuration first
+                    try:
+                        model = genai.GenerativeModel(
+                            model_name,
+                            generation_config=genai.GenerationConfig(
+                                temperature=0.2,
+                                top_p=0.95,
+                                top_k=40,
+                                max_output_tokens=4096,
+                            ),
+                            safety_settings=[
+                                {
+                                    "category": "HARM_CATEGORY_HARASSMENT",
+                                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                                },
+                                {
+                                    "category": "HARM_CATEGORY_HATE_SPEECH",
+                                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                                },
+                                {
+                                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                                },
+                                {
+                                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                                }
+                            ]
+                        )
+                    except TypeError as type_error:
+                        # If advanced configuration is not supported, try with basic configuration
+                        if "unexpected keyword argument" in str(type_error):
+                            yield f"data: {json.dumps({'text': f'Model {model_name} does not support advanced configuration, using basic initialization...'})}\n\n"
+                            model = genai.GenerativeModel(model_name)
+                        else:
+                            # Re-raise if it's a different TypeError
+                            raise
+                    
                     # Test the model with a simple prompt
                     test_response = model.generate_content("Hello")
                     # If we get here, the model works
@@ -199,21 +238,30 @@ def analyze_email_with_ai(email_id):
             # Email Phishing Analysis
             
             ## Overall Risk Assessment
-            [Provide a clear risk level: Low, Medium, or High, with brief explanation]
+            [Provide a clear risk level: Low, Medium, or High, with brief explanation and confidence level]
             
             ## Key Suspicious Elements
-            [List all suspicious elements as bullet points with explanations]
+            [List all suspicious elements as bullet points with detailed explanations. Be thorough in your analysis.]
             
             ## Safe Indicators
-            [List any safe indicators as bullet points]
+            [List any safe indicators as bullet points with explanations]
             
             ## Technical Analysis
-            [Provide technical details about links, domains, authentication, etc.]
+            [Provide in-depth technical details about:
+            - Links and URLs (analyze domain reputation, URL structure, etc.)
+            - Email headers and authentication (SPF, DKIM, DMARC)
+            - Sender analysis (domain age, reputation, etc.)
+            - Content analysis (urgency, threats, offers, etc.)
+            - Any other technical indicators]
+            
+            ## Recommendations
+            [Provide specific recommendations for the user based on your analysis]
             
             ## Final Verdict
-            [Provide a final conclusion about whether this is phishing or not]
+            [Provide a final conclusion about whether this is phishing or not, with confidence level]
             
             Use **bold** for important points, organize with clear headings, and use bullet points for lists.
+            Be thorough and detailed in your analysis, as this will be used to protect users from phishing attacks.
             
             Email to analyze:
             {email_content}"""
@@ -221,17 +269,56 @@ def analyze_email_with_ai(email_id):
             yield f"data: {json.dumps({'text': 'Starting analysis...'})}\n\n"
             
             try:
-                response = chat.send_message(prompt, stream=True)
+                # Try with generation_config first
+                try:
+                    response = chat.send_message(
+                        prompt,
+                        generation_config=genai.GenerationConfig(
+                            temperature=0.2,
+                            top_p=0.95,
+                            top_k=40,
+                            max_output_tokens=4096,
+                        ),
+                        stream=True
+                    )
+                except TypeError as type_error:
+                    # If generation_config is not supported, try without it
+                    if "unexpected keyword argument" in str(type_error):
+                        yield f"data: {json.dumps({'text': 'Model does not support advanced configuration, using default settings...'})}\n\n"
+                        response = chat.send_message(prompt, stream=True)
+                    else:
+                        # Re-raise if it's a different TypeError
+                        raise
                 
                 # Stream the response
                 for chunk in response:
                     if chunk.text:
                         yield f"data: {json.dumps({'text': chunk.text})}\n\n"
-            except Exception as chat_error:
+                        
+            except Exception as e:
                 # If streaming fails, try non-streaming
                 yield f"data: {json.dumps({'text': 'Streaming failed, trying non-streaming mode...'})}\n\n"
                 try:
-                    response = model.generate_content(prompt)
+                    # Try with generation_config first
+                    try:
+                        response = model.generate_content(
+                            prompt,
+                            generation_config=genai.GenerationConfig(
+                                temperature=0.2,
+                                top_p=0.95,
+                                top_k=40,
+                                max_output_tokens=4096,
+                            )
+                        )
+                    except TypeError as type_error:
+                        # If generation_config is not supported, try without it
+                        if "unexpected keyword argument" in str(type_error):
+                            yield f"data: {json.dumps({'text': 'Model does not support advanced configuration for non-streaming, using default settings...'})}\n\n"
+                            response = model.generate_content(prompt)
+                        else:
+                            # Re-raise if it's a different TypeError
+                            raise
+                    
                     yield f"data: {json.dumps({'text': response.text})}\n\n"
                 except Exception as non_stream_error:
                     yield f"data: {json.dumps({'error': f'Both streaming and non-streaming attempts failed: {str(non_stream_error)}'})}\n\n"

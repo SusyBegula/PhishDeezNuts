@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#3a7bd5" />
     <meta
       name="description"
-      content="PhishDeezNuts - Phishing Email Detection Tool"
+      content="PhishDeezNuts - Advanced Phishing Email Detection Tool"
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
@@ -28,7 +28,64 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
     />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <title>PhishDeezNuts - Phishing Email Detection</title>
+    <style>
+      /* Initial body styles to prevent flash of white background */
+      body {
+        background-color: #f8f9fa;
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', 'Roboto', sans-serif;
+        transition: background-color 0.3s ease;
+      }
+      
+      /* Apply dark theme if user prefers it */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #121212;
+          color: #ffffff;
+        }
+      }
+      
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+      
+      /* Dark mode scrollbar */
+      @media (prefers-color-scheme: dark) {
+        ::-webkit-scrollbar-track {
+          background: #2d2d2d;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: #555;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: #777;
+        }
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -16,6 +16,13 @@ import {
   Switch,
   FormControlLabel,
   Grid,
+  Slider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  TextField,
+  Snackbar,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -23,21 +30,65 @@ import {
   Storage as StorageIcon,
   Security as SecurityIcon,
   Info as InfoIcon,
+  Notifications as NotificationsIcon,
+  Visibility as VisibilityIcon,
+  Save as SaveIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
+import { useTheme } from '../contexts/ThemeContext';
+import ThemeToggle from '../components/ThemeToggle';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// Mock function to save settings
+const saveUserSettings = async (settings) => {
+  // In a real app, this would be an API call
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      localStorage.setItem('userSettings', JSON.stringify(settings));
+      resolve({ success: true });
+    }, 1000);
+  });
+};
+
+// Mock function to get settings
+const getUserSettings = async () => {
+  // In a real app, this would be an API call
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const settings = localStorage.getItem('userSettings');
+      resolve(settings ? JSON.parse(settings) : defaultSettings);
+    }, 500);
+  });
+};
+
+// Default settings
+const defaultSettings = {
+  notifications: {
+    emailAlerts: true,
+    browserNotifications: false,
+    alertThreshold: 70
+  },
+  display: {
+    emailsPerPage: 20,
+    defaultSort: 'date',
+    compactView: false
+  },
+  security: {
+    autoAnalyze: true,
+    linkProtection: true
+  }
+};
 
 const Settings = () => {
   const [modelStatus, setModelStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [retraining, setRetraining] = useState(false);
-  const [settings, setSettings] = useState({
-    autoAnalyze: true,
-    useAI: true,
-    useML: true,
-    useRules: true,
-  });
+  const [settings, setSettings] = useState(defaultSettings);
+  const [saving, setSaving] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     const fetchModelStatus = async () => {
@@ -53,6 +104,24 @@ const Settings = () => {
     };
 
     fetchModelStatus();
+  }, []);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const userSettings = await getUserSettings();
+        setSettings(userSettings);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        setSnackbar({
+          open: true,
+          message: 'Failed to load settings',
+          severity: 'error'
+        });
+      }
+    };
+
+    loadSettings();
   }, []);
 
   const handleRetrainModel = async () => {
@@ -79,221 +148,269 @@ const Settings = () => {
     }
   };
 
-  const handleSettingChange = (setting) => {
-    setSettings(prev => ({
-      ...prev,
-      [setting]: !prev[setting]
-    }));
+  const handleSettingChange = (category, setting, value) => {
+    setSettings({
+      ...settings,
+      [category]: {
+        ...settings[category],
+        [setting]: value
+      }
+    });
   };
 
-  // These settings would normally be saved to the backend
-  const saveSettings = () => {
-    alert('Settings saved successfully!');
-    // In a real app, you would save these to the backend
-    // axios.post(`${API_URL}/api/settings`, settings);
+  const handleSaveSettings = async () => {
+    try {
+      setSaving(true);
+      await saveUserSettings(settings);
+      setSnackbar({
+        open: true,
+        message: 'Settings saved successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to save settings',
+        severity: 'error'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetSettings = () => {
+    setSettings(defaultSettings);
+    setSnackbar({
+      open: true,
+      message: 'Settings reset to defaults',
+      severity: 'info'
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
       <Typography variant="h4" gutterBottom>
         Settings
       </Typography>
-
-      <Grid container spacing={3}>
-        {/* ML Model Settings */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <StorageIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">
-                  ML Model Status
-                </Typography>
-              </Box>
-              
-              <Divider sx={{ mb: 2 }} />
-              
-              {modelStatus ? (
-                <List dense>
-                  <ListItem>
-                    <ListItemText 
-                      primary="Model Exists" 
-                      secondary={modelStatus.model_exists ? "Yes" : "No"} 
-                    />
-                  </ListItem>
-                  
-                  <ListItem>
-                    <ListItemText 
-                      primary="Last Trained" 
-                      secondary={modelStatus.metadata?.trained_at || "Never"} 
-                    />
-                  </ListItem>
-                  
-                  <ListItem>
-                    <ListItemText 
-                      primary="Accuracy" 
-                      secondary={modelStatus.metadata?.accuracy ? 
-                        `${(parseFloat(modelStatus.metadata.accuracy) * 100).toFixed(2)}%` : 
-                        "Unknown"} 
-                    />
-                  </ListItem>
-                  
-                  <ListItem>
-                    <ListItemText 
-                      primary="F1 Score" 
-                      secondary={modelStatus.metadata?.f1_score || "Unknown"} 
-                    />
-                  </ListItem>
-                  
-                  <ListItem>
-                    <ListItemText 
-                      primary="Training Samples" 
-                      secondary={modelStatus.metadata?.samples || "Unknown"} 
-                    />
-                  </ListItem>
-                </List>
-              ) : (
-                <Alert severity="warning">
-                  Could not retrieve model status
-                </Alert>
-              )}
-              
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<RefreshIcon />}
-                onClick={handleRetrainModel}
-                disabled={retraining}
-                fullWidth
-                sx={{ mt: 2 }}
-              >
-                {retraining ? 'Retraining...' : 'Retrain Model'}
-              </Button>
-              
-              <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 1 }}>
-                Retraining may take several minutes depending on the dataset size.
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      
+      {/* Appearance Settings */}
+      <Paper elevation={3} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <VisibilityIcon sx={{ mr: 1 }} /> Appearance
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
         
-        {/* Detection Settings */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <SecurityIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">
-                  Detection Settings
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="subtitle1" gutterBottom>
+                  Theme
                 </Typography>
-              </Box>
-              
-              <Divider sx={{ mb: 2 }} />
-              
-              <List>
-                <ListItem>
-                  <ListItemIcon>
-                    <InfoIcon />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Auto-analyze new emails" 
-                    secondary="Automatically analyze emails when syncing" 
-                  />
-                  <Switch
-                    edge="end"
-                    checked={settings.autoAnalyze}
-                    onChange={() => handleSettingChange('autoAnalyze')}
-                  />
-                </ListItem>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Typography sx={{ mr: 2 }}>
+                    Dark Mode
+                  </Typography>
+                  <ThemeToggle />
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Toggle between light and dark theme
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="subtitle1" gutterBottom>
+                  Display Options
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.display.compactView}
+                      onChange={(e) => handleSettingChange('display', 'compactView', e.target.checked)}
+                    />
+                  }
+                  label="Compact View"
+                />
                 
-                <ListItem>
-                  <ListItemIcon>
-                    <StorageIcon />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Use ML Model" 
-                    secondary="Use machine learning for detection" 
+                <Box sx={{ mt: 2 }}>
+                  <Typography gutterBottom>
+                    Emails Per Page: {settings.display.emailsPerPage}
+                  </Typography>
+                  <Slider
+                    value={settings.display.emailsPerPage}
+                    onChange={(e, value) => handleSettingChange('display', 'emailsPerPage', value)}
+                    valueLabelDisplay="auto"
+                    step={5}
+                    marks
+                    min={5}
+                    max={50}
                   />
-                  <Switch
-                    edge="end"
-                    checked={settings.useML}
-                    onChange={() => handleSettingChange('useML')}
-                  />
-                </ListItem>
+                </Box>
                 
-                <ListItem>
-                  <ListItemIcon>
-                    <BuildIcon />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Use AI Analysis" 
-                    secondary="Use Gemini AI for detection" 
-                  />
-                  <Switch
-                    edge="end"
-                    checked={settings.useAI}
-                    onChange={() => handleSettingChange('useAI')}
-                  />
-                </ListItem>
-                
-                <ListItem>
-                  <ListItemIcon>
-                    <SecurityIcon />
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Use Rule-based Detection" 
-                    secondary="Use predefined rules for detection" 
-                  />
-                  <Switch
-                    edge="end"
-                    checked={settings.useRules}
-                    onChange={() => handleSettingChange('useRules')}
-                  />
-                </ListItem>
-              </List>
-              
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={saveSettings}
-                fullWidth
-                sx={{ mt: 2 }}
-              >
-                Save Settings
-              </Button>
-            </CardContent>
-          </Card>
+                <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
+                  <InputLabel>Default Sort</InputLabel>
+                  <Select
+                    value={settings.display.defaultSort}
+                    onChange={(e) => handleSettingChange('display', 'defaultSort', e.target.value)}
+                    label="Default Sort"
+                  >
+                    <MenuItem value="date">Date (Newest First)</MenuItem>
+                    <MenuItem value="date_asc">Date (Oldest First)</MenuItem>
+                    <MenuItem value="phishing_score">Phishing Score (High to Low)</MenuItem>
+                    <MenuItem value="phishing_score_asc">Phishing Score (Low to High)</MenuItem>
+                    <MenuItem value="sender">Sender (A-Z)</MenuItem>
+                  </Select>
+                </FormControl>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
+      </Paper>
+      
+      {/* Notification Settings */}
+      <Paper elevation={3} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <NotificationsIcon sx={{ mr: 1 }} /> Notifications
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
         
-        {/* About */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              About PhishDeezNuts
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            
-            <Typography variant="body1" paragraph>
-              PhishDeezNuts is a phishing email detection tool that uses machine learning, AI, and rule-based approaches to identify potentially malicious emails.
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.notifications.emailAlerts}
+                  onChange={(e) => handleSettingChange('notifications', 'emailAlerts', e.target.checked)}
+                />
+              }
+              label="Email Alerts"
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 4, mb: 2 }}>
+              Receive email notifications for high-risk phishing emails
             </Typography>
             
-            <Typography variant="body2" color="textSecondary">
-              Version: 1.0.0
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.notifications.browserNotifications}
+                  onChange={(e) => handleSettingChange('notifications', 'browserNotifications', e.target.checked)}
+                />
+              }
+              label="Browser Notifications"
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
+              Receive browser notifications for high-risk phishing emails
             </Typography>
-            <Typography variant="body2" color="textSecondary">
-              © {new Date().getFullYear()} PhishDeezNuts. All rights reserved.
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <Typography gutterBottom>
+              Phishing Alert Threshold: {settings.notifications.alertThreshold}%
             </Typography>
-          </Paper>
+            <Slider
+              value={settings.notifications.alertThreshold}
+              onChange={(e, value) => handleSettingChange('notifications', 'alertThreshold', value)}
+              valueLabelDisplay="auto"
+              step={5}
+              marks
+              min={0}
+              max={100}
+            />
+            <Typography variant="body2" color="text.secondary">
+              You will be alerted when an email's phishing score exceeds this threshold
+            </Typography>
+          </Grid>
         </Grid>
-      </Grid>
+      </Paper>
+      
+      {/* Security Settings */}
+      <Paper elevation={3} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <SecurityIcon sx={{ mr: 1 }} /> Security
+        </Typography>
+        <Divider sx={{ mb: 3 }} />
+        
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.security.autoAnalyze}
+                  onChange={(e) => handleSettingChange('security', 'autoAnalyze', e.target.checked)}
+                />
+              }
+              label="Auto-Analyze Emails"
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 4, mb: 2 }}>
+              Automatically analyze new emails for phishing
+            </Typography>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.security.linkProtection}
+                  onChange={(e) => handleSettingChange('security', 'linkProtection', e.target.checked)}
+                />
+              }
+              label="Link Protection"
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 4 }}>
+              Check links against known phishing databases
+            </Typography>
+          </Grid>
+        </Grid>
+      </Paper>
+      
+      {/* Action Buttons */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4 }}>
+        <Button 
+          variant="outlined" 
+          color="secondary" 
+          onClick={handleResetSettings}
+          startIcon={<DeleteIcon />}
+          sx={{ mr: 2 }}
+        >
+          Reset to Defaults
+        </Button>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={handleSaveSettings}
+          startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+          disabled={saving}
+        >
+          {saving ? 'Saving...' : 'Save Settings'}
+        </Button>
+      </Box>
+      
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
